@@ -88,13 +88,15 @@ try {
         $msiPath = $msi.FullName
         Write-Host "Attempting silent repair of the add-in using $msiPath…" -ForegroundColor Cyan
 
-        $msiArgs  = "/fa \"$msiPath\" /quiet /norestart"
-        $process = Start-Process -FilePath "msiexec.exe" -ArgumentList $msiArgs -Wait -PassThru -ErrorAction SilentlyContinue
+        # Build argument list as an array to avoid quoting issues when parsed by Invoke-Expression
+        $msiArgs  = @('/fa', $msiPath, '/quiet', '/norestart')
+        $process  = Start-Process -FilePath 'msiexec.exe' -ArgumentList $msiArgs -Wait -PassThru -ErrorAction SilentlyContinue
 
         # According to Windows Installer documentation, an exit code of 0 indicates success.
         if ($process.ExitCode -ne 0) {
             Write-Warning "Silent repair returned exit code $($process.ExitCode). Launching installer interactively…"
-            Start-Process -FilePath "msiexec.exe" -ArgumentList "/i \"$msiPath\"" -Wait
+            # For the interactive fallback, build the argument list as an array
+            Start-Process -FilePath 'msiexec.exe' -ArgumentList @('/i', $msiPath) -Wait
         } else {
             Write-Host "Silent repair completed successfully." -ForegroundColor Green
         }
